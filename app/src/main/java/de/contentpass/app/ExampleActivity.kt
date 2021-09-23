@@ -3,13 +3,9 @@ package de.contentpass.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import de.contentpass.app.ui.theme.ContentPassExampleTheme
-
-
-
 
 class ExampleActivity : ComponentActivity() {
     private lateinit var viewModel: ExampleViewModel

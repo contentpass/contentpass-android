@@ -6,6 +6,7 @@ dependencyResolutionManagement {
         jcenter() // Warning: this repository is going to shut down soon
     }
 }
-rootProject.name = "ContentPassExample"
+rootProject.name = "contentpass"
 include ':app'
 include ':lib'
+include ":scripts"

@@ -1,7 +1,6 @@
 package de.contentpass.app
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.activity.ComponentActivity
@@ -14,22 +13,25 @@ class ExampleViewModel(context: Context) : ViewModel() {
     private val _hasValidSubscription = MutableLiveData(false)
     val hasValidSubscription: LiveData<Boolean> = _hasValidSubscription
 
-    private val config = context.resources.openRawResource(R.raw.contentpass_configuration)
+    private val config = context.resources
+        .openRawResource(R.raw.contentpass_configuration)
 
     private val contentPass = ContentPass.Builder()
         .context(context)
         .configurationFile(config)
         .build()
 
-    suspend fun login(fromActivity: ComponentActivity) {
-        val state = contentPass.authenticateSuspending(fromActivity)
-
-        onNewContentPassState(state)
+    fun onActivityCreate(activity: ComponentActivity) {
+        contentPass.registerActivityResultLauncher(activity)
+        contentPass.registerObserver(object : ContentPass.Observer {
+            override fun onNewState(state: ContentPass.State) {
+                onNewContentPassState(state)
+            }
+        })
     }
 
     private fun onNewContentPassState(state: ContentPass.State) {
-        Log.d("CONTENTPASSS", state.toString())
-        when (state)  {
+        when (state) {
             is ContentPass.State.Unauthenticated -> {
                 _isAuthenticated.postValue(false)
                 _hasValidSubscription.postValue(false)
@@ -42,17 +44,13 @@ class ExampleViewModel(context: Context) : ViewModel() {
         }
     }
 
-    fun onActivityCreate(activity: ComponentActivity) {
-        contentPass.registerActivityResultLauncher(activity)
-        contentPass.registerObserver(object : ContentPass.Observer {
-            override fun onNewState(state: ContentPass.State) {
-                onNewContentPassState(state)
-            }
-        })
+    suspend fun login(fromActivity: ComponentActivity) {
+        val state = contentPass.authenticateSuspending(fromActivity)
+
+        onNewContentPassState(state)
     }
 
     fun logout() {
-        _isAuthenticated.postValue(false)
-        _hasValidSubscription.postValue(false)
+        contentPass.logout()
     }
 }

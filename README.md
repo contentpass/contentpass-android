@@ -11,7 +11,15 @@
 
 ## Installation
 
-Gradle TBA
+Our SDK is available on Maven Central.
+
+```groovy
+implementation 'de.contentpass:contentpass-android:1.0.0'
+```
+
+Add this to your app's `build.gradle` file's `dependencies` element.
+
+
 
 ## Configuration
 
@@ -42,6 +50,8 @@ android.defaultConfig.manifestPlaceholders = [
 If that's not to your liking, please refer to this [documentation](https://github.com/openid/AppAuth-Android#capturing-the-authorization-redirect) for more options on how to register for capturing the redirect.
 
 ## Usage
+
+We provide an example application in the `/app` app module. If you're unclear about the usage of some of our features, have a look and tinker around with the code. Refer to the example's [README](https://github.com/contentpass/contentpass-android/blob/main/app/README.md) for more information.
 
 ### The contentpass_configuration.json
 

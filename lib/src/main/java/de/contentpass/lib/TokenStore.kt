@@ -18,7 +18,7 @@ import javax.crypto.spec.PSource
 import javax.crypto.spec.SecretKeySpec
 import javax.security.auth.x500.X500Principal
 
-internal class TokenStore(context: Context): TokenStoring {
+internal class TokenStore(context: Context) : TokenStoring {
     private val tokenKey = "de.contentpass.AuthState"
     private val ivKey = "de.contentpass.IV"
     private val cipher = Cipher.getInstance("AES/GCM/NOPADDING")

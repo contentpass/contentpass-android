@@ -7,7 +7,7 @@ val composeVersion = rootProject.extra.get("composeVersion") as String?
 val lifecycleVersion = "2.3.1"
 
 android {
-    compileSdk = 30
+    compileSdk = 31
 
     defaultConfig {
         applicationId = "de.contentpass.app"
