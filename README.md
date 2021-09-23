@@ -18,7 +18,20 @@ Gradle TBA
 You will be provided a `contentpass_configuration.json`. You will need this later to instantiate the contentpass object.
 
 You will also need your `redirect_uri` that is specified in this json file to setup the capturing of the authentication redirect.
-Since we use [AppAuth](https://github.com/openid/AppAuth-Android) for the OAuth process, the easiest way to properly set this up is in your app's `build.gradle` file:
+Since we use [AppAuth](https://github.com/openid/AppAuth-Android) for the OAuth process, the easiest way to properly set this up is in your app's `build.gradle` file.
+
+An example `contentpass_configuration.json`:
+
+```json
+{
+  "schema_version": 1,
+  "base_url": "https://example.com",
+  "redirect_uri": "com.example.app://oauth",
+  "property_id": "df717ca-8acd-4328-a79b-3bb94ab221a0"
+}
+```
+
+Extract the `redirect_uri` and place the scheme in your `build.gradle`:
 
 ```groovy
 android.defaultConfig.manifestPlaceholders = [
