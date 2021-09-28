@@ -3,9 +3,12 @@ package de.contentpass.lib
 import android.content.Context
 import android.security.KeyPairGeneratorSpec
 import java.math.BigInteger
-import java.security.*
+import java.security.KeyPair
+import java.security.KeyPairGenerator
+import java.security.PrivateKey
+import java.security.PublicKey
 import java.security.spec.MGF1ParameterSpec
-import java.util.*
+import java.util.Calendar
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey

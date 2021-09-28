@@ -1,22 +1,10 @@
 package de.contentpass.lib
 
 import android.content.Context
-import android.security.KeyPairGeneratorSpec
-import android.util.Log
 import net.openid.appauth.AuthState
-import java.math.BigInteger
-import java.nio.charset.Charset
-import java.security.*
-import java.security.spec.MGF1ParameterSpec
-import java.util.*
+import java.security.SecureRandom
 import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.OAEPParameterSpec
-import javax.crypto.spec.PSource
-import javax.crypto.spec.SecretKeySpec
-import javax.security.auth.x500.X500Principal
 
 internal class TokenStore(context: Context) : TokenStoring {
     private val tokenKey = "de.contentpass.AuthState"
