@@ -286,9 +286,10 @@ class ContentPass internal constructor(
 
     private suspend fun onNewAuthState(authState: AuthState): State {
         tokenStore.storeAuthState(authState)
+
         state = if (authState.isAuthorized) {
-            return setupRefreshTimer(authState)?.let {
-                return if (it) {
+            setupRefreshTimer(authState)?.let {
+                if (it) {
                     val hasSubscription = authorizer.validateSubscription(authState.idToken!!)
                     State.Authenticated(hasSubscription)
                 } else {
