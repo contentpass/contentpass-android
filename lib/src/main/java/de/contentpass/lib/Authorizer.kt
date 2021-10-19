@@ -68,11 +68,11 @@ internal class Authorizer(
         return if (this::configuration.isInitialized) {
             configuration
         } else {
-            fetchConfigCallbackWrapper()
+            doFetchConfig()
         }
     }
 
-    private suspend fun fetchConfigCallbackWrapper(): AuthorizationServiceConfiguration =
+    private suspend fun doFetchConfig(): AuthorizationServiceConfiguration =
         suspendCoroutine { cont ->
             AuthorizationServiceConfiguration.fetchFromIssuer(baseUrl) { config, ex ->
                 if (ex != null) {

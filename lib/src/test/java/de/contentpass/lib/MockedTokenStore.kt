@@ -2,7 +2,7 @@ package de.contentpass.lib
 
 import net.openid.appauth.AuthState
 
-class MockedTokenStore: TokenStoring {
+class MockedTokenStore : TokenStoring {
     private var authState: AuthState? = null
 
     override fun storeAuthState(authState: AuthState) {

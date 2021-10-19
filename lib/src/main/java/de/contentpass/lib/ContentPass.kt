@@ -88,7 +88,7 @@ class ContentPass internal constructor(
         fun build(): ContentPass {
             configuration = grabConfiguration()
             val authorizer = Authorizer(configuration!!, context!!)
-            val store = TokenStore(context!!)
+            val store = TokenStore(context!!, KeyStore(context!!))
             return ContentPass(authorizer, store)
         }
 
@@ -239,7 +239,7 @@ class ContentPass internal constructor(
             return onNewAuthState(authState)
         } ?: run {
             val message = "activityResultLauncher is null! -- " +
-                "You need to call a version of registerActivityResultLauncher before calling authenticate"
+                    "You need to call a version of registerActivityResultLauncher before calling authenticate"
             throw NullPointerException(message)
         }
     }
@@ -351,7 +351,7 @@ class ContentPass internal constructor(
         if (counter < 7) {
             val del = (counter * 10 * 1000).toLong()
             val message = "Encountered exception during token refresh. " +
-                "Will retry in ${(del / 1000)} seconds. \nEncountered Exception: $throwable"
+                    "Will retry in ${(del / 1000)} seconds. \nEncountered Exception: $throwable"
             Log.e(null, message)
             delay(del)
             refreshToken(counter + 1)
