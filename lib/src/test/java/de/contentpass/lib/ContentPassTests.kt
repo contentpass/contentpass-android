@@ -106,9 +106,17 @@ class ContentPassTests {
     }
 
     @Test
-    fun `logout sets state to Unauthenticated`() {
-        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true))
+    fun `logout sets state to Unauthenticated`() = runBlocking {
+        val authState: AuthState = mockk(relaxed = true)
+        every { authState.isAuthorized }.returns(true)
+        every { authState.accessTokenExpirationTime }.returns(System.currentTimeMillis() + 5000)
+        val authorizer: Authorizing = mockk()
+        coEvery { authorizer.validateSubscription(any()) }.returns(true)
+        coEvery { authorizer.authenticate(any(), any()) }.returns(authState)
+        val contentPass = ContentPass(authorizer, mockk(relaxed = true))
 
+        contentPass.registerActivityResultLauncher(mockk<Fragment>(relaxed = true))
+        contentPass.authenticateSuspending(mockk())
         assertNotEquals(ContentPass.State.Unauthenticated, contentPass.state)
 
         contentPass.logout()
