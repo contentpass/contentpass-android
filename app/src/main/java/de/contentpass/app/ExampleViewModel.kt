@@ -1,9 +1,9 @@
 package de.contentpass.app
 
 import android.content.Context
+import androidx.activity.ComponentActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModel
 import de.contentpass.lib.ContentPass
 

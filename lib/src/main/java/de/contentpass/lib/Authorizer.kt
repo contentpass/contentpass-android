@@ -9,12 +9,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import net.openid.appauth.*
-import okhttp3.*
+import net.openid.appauth.AuthState
+import net.openid.appauth.AuthorizationException
+import net.openid.appauth.AuthorizationRequest
+import net.openid.appauth.AuthorizationResponse
+import net.openid.appauth.AuthorizationService
+import net.openid.appauth.AuthorizationServiceConfiguration
+import net.openid.appauth.ResponseTypeValues
+import net.openid.appauth.TokenRequest
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import okio.IOException
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.suspendCoroutine
-import net.openid.appauth.AuthorizationException
 
 internal interface Authorizing {
     suspend fun authenticate(
@@ -57,11 +68,11 @@ internal class Authorizer(
         return if (this::configuration.isInitialized) {
             configuration
         } else {
-            fetchConfigCallbackWrapper()
+            doFetchConfig()
         }
     }
 
-    private suspend fun fetchConfigCallbackWrapper(): AuthorizationServiceConfiguration =
+    private suspend fun doFetchConfig(): AuthorizationServiceConfiguration =
         suspendCoroutine { cont ->
             AuthorizationServiceConfiguration.fetchFromIssuer(baseUrl) { config, ex ->
                 if (ex != null) {

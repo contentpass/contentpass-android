@@ -9,11 +9,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import kotlinx.coroutines.*
-import net.openid.appauth.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import net.openid.appauth.AuthState
+import net.openid.appauth.AuthorizationException
 import java.io.InputStream
 import java.lang.NullPointerException
-import java.util.*
+import java.util.Timer
+import java.util.TimerTask
 
 /**
  * An object that handles all communication with the contentpass servers for you.
@@ -82,7 +88,7 @@ class ContentPass internal constructor(
         fun build(): ContentPass {
             configuration = grabConfiguration()
             val authorizer = Authorizer(configuration!!, context!!)
-            val store = TokenStore(context!!)
+            val store = TokenStore(context!!, KeyStore(context!!))
             return ContentPass(authorizer, store)
         }
 
@@ -126,11 +132,7 @@ class ContentPass internal constructor(
          */
         class Authenticated(val hasValidSubscription: Boolean) : State()
     }
-    /// .
-    ///
-    ///  `ContentPassDelegate` as the parent object's `delegate`.
-    ///
-    /// For the possible values and their meaning see `ContentPass.State`.
+
     /**
      * The current authentication state of the contentpass sdk.
      *
@@ -270,7 +272,6 @@ class ContentPass internal constructor(
         }
     }
 
-
     /**
      * Removes all saved information regarding the currently logged in user.
      *
@@ -285,9 +286,10 @@ class ContentPass internal constructor(
 
     private suspend fun onNewAuthState(authState: AuthState): State {
         tokenStore.storeAuthState(authState)
+
         state = if (authState.isAuthorized) {
-            return setupRefreshTimer(authState)?.let {
-                return if (it) {
+            setupRefreshTimer(authState)?.let {
+                if (it) {
                     val hasSubscription = authorizer.validateSubscription(authState.idToken!!)
                     State.Authenticated(hasSubscription)
                 } else {
@@ -361,5 +363,4 @@ class ContentPass internal constructor(
             tokenStore.deleteAuthState()
         }
     }
-
 }
