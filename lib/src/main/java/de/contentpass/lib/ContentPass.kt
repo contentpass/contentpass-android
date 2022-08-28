@@ -9,13 +9,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import net.openid.appauth.AuthState
 import net.openid.appauth.AuthorizationException
+import okhttp3.Request
 import java.io.InputStream
 import java.lang.NullPointerException
 import java.util.Timer
@@ -42,7 +39,7 @@ import java.util.TimerTask
  */
 class ContentPass internal constructor(
     private val authorizer: Authorizing,
-    private val tokenStore: TokenStoring
+    private val tokenStore: TokenStoring,
 ) {
     /**
      * A collection of functions that allow you to react to changes in the [ContentPass] object.
@@ -59,6 +56,13 @@ class ContentPass internal constructor(
 
     interface AuthenticationCallback {
         fun onSuccess(state: State)
+        fun onFailure(exception: Throwable)
+    }
+
+    class CountImpressionException(statusCode: Int) : Throwable("$statusCode")
+
+    interface CountImpressionCallback {
+        fun onSuccess()
         fun onFailure(exception: Throwable)
     }
 
@@ -259,7 +263,6 @@ class ContentPass internal constructor(
      * @param context the context the authentication flow will be started from.
      * @param callback an object implementing the [AuthenticationCallback] interface that enables
      *                 you to react to the authentication flow's outcome.
-     * @return the resulting authentication [State]
      */
     fun authenticate(context: Context, callback: AuthenticationCallback) {
         CoroutineScope(coroutineContext).launch {
@@ -282,6 +285,51 @@ class ContentPass internal constructor(
         tokenStore.deleteAuthState()
         state = State.Unauthenticated
         return state
+    }
+
+    /**
+     * Count an impression by calling this function.
+     *
+     * This is the compatibility function for Java users and developers who are not yet
+     * comfortable or able to use kotlin coroutines.
+     *
+     * A user has to be authenticated and have an active subscription applicable to your
+     * scope for this to work.
+     * This function calls the callback's onSuccess on a successful impression counting.
+     * In case of an error the callback's onFailure contains an exception containing more information.
+     * If the exception is a ContentPass.CountImpressionException and the message states the http error
+     * code 404, the user most likely has no applicable subscription.
+     *
+     * @param context the context the authentication flow can be restarted from in case a login is necessary.
+     * @param callback an object implementing the [CountImpressionCallback] interface that enables
+     *                 you to react to the count impression outcome.
+     */
+    fun countImpression(context: Context, callback: CountImpressionCallback) {
+        CoroutineScope(coroutineContext).launch {
+            try {
+                countImpressionSuspending(context)
+                callback.onSuccess()
+            } catch (exception: Throwable) {
+                callback.onFailure(exception)
+            }
+        }
+    }
+
+    /**
+     * Count an impression by calling this function.
+     *
+     * A user has to be authenticated and have an active subscription applicable to your
+     * scope for this to work.
+     * This function simply returns on success or will throw an exception containing more information.
+     * If the exception is a ContentPass.CountImpressionException and the message states the http error
+     * code 404, the user most likely has no applicable subscription.
+     *
+     * @param context the context the authentication flow can be restarted from in case a login is necessary.
+     */
+    suspend fun countImpressionSuspending(context: Context) {
+        return withContext(coroutineContext) {
+            authorizer.countImpression(authState, context)
+        }
     }
 
     private suspend fun onNewAuthState(authState: AuthState): State {

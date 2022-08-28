@@ -5,32 +5,21 @@ import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import net.openid.appauth.AuthState
-import net.openid.appauth.AuthorizationException
-import net.openid.appauth.AuthorizationRequest
-import net.openid.appauth.AuthorizationResponse
-import net.openid.appauth.AuthorizationService
-import net.openid.appauth.AuthorizationServiceConfiguration
-import net.openid.appauth.ResponseTypeValues
-import net.openid.appauth.TokenRequest
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.FormBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
+import kotlinx.coroutines.*
+import net.openid.appauth.*
+import net.openid.appauth.AuthState.AuthStateAction
+import okhttp3.*
 import okio.IOException
+import java.util.*
 import kotlin.coroutines.Continuation
+import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+
 
 internal interface Authorizing {
     suspend fun authenticate(
         activity: Context,
-        activityResultLauncher: ActivityResultLauncher<Intent>
+        activityResultLauncher: ActivityResultLauncher<Intent>,
     ): AuthState
 
     suspend fun validateSubscription(idToken: String): Boolean
@@ -38,11 +27,13 @@ internal interface Authorizing {
     suspend fun refreshToken(authState: AuthState): AuthState
 
     fun onAuthorizationRequestResult(intent: Intent?)
+
+    suspend fun countImpression(authState: AuthState, activity: Context)
 }
 
 internal class Authorizer(
     configuration: Configuration,
-    private val context: Context
+    private val context: Context,
 ) : Authorizing {
     private val baseUrl = configuration.baseUrl
     private val redirectUri = configuration.redirectUri
@@ -89,7 +80,7 @@ internal class Authorizer(
 
     override suspend fun authenticate(
         activity: Context,
-        activityResultLauncher: ActivityResultLauncher<Intent>
+        activityResultLauncher: ActivityResultLauncher<Intent>,
     ): AuthState {
         val request = buildRequest()
         val result: AuthState = suspendCoroutine { cont ->
@@ -102,8 +93,6 @@ internal class Authorizer(
                 cont.resumeWith(Result.failure(exception))
             }
         }
-        authService?.dispose()
-        authService = null
         return result
     }
 
@@ -146,6 +135,56 @@ internal class Authorizer(
             authenticationContinuation?.resumeWith(result)
             authState = null
             authenticationContinuation = null
+        }
+    }
+
+    override suspend fun countImpression(authState: AuthState, activity: Context) {
+        val impressionId = UUID.randomUUID()
+        val path = "pass/hit?pid=$propertyId&iid=$impressionId&t=pageview"
+
+        val response = fireRequestWithFreshTokens(path, authState, activity)
+
+        if (response.code == 200) {
+            return
+        } else {
+            throw ContentPass.CountImpressionException(response.code)
+        }
+    }
+
+    private suspend fun fireRequestWithFreshTokens(
+        path: String,
+        authState: AuthState,
+        context: Context,
+    ): Response {
+        val client = OkHttpClient.Builder()
+            .build()
+
+        return suspendCoroutine { continuation ->
+            try {
+                val authService = AuthorizationService(context)
+                authState.performActionWithFreshTokens(authService) { accessToken, _, ex ->
+                    ex?.let {
+                        continuation.resumeWithException(it)
+                        return@performActionWithFreshTokens
+                    }
+
+                    accessToken?.let { strongToken ->
+                        val authorizedRequest = Request.Builder()
+                            .url("$baseUrl/$path")
+                            .header("Authorization", "Bearer $strongToken")
+                            .build()
+
+                        val response = client.newCall(authorizedRequest).execute()
+                        continuation.resumeWith(Result.success(response))
+                    } ?: run {
+                        val message =
+                            "Although no AuthenticationException was thrown, there's no accessToken - please report this via GitHub issues"
+                        continuation.resumeWithException(NullPointerException(message))
+                    }
+                }
+            } catch (error: Throwable) {
+                continuation.resumeWithException(error)
+            }
         }
     }
 

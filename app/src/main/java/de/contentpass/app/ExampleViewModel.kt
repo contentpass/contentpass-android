@@ -13,6 +13,11 @@ class ExampleViewModel(context: Context) : ViewModel() {
     private val _hasValidSubscription = MutableLiveData(false)
     val hasValidSubscription: LiveData<Boolean> = _hasValidSubscription
 
+    private val _impressionTries = MutableLiveData(0)
+    val impressionTries: LiveData<Int> = _impressionTries
+    private val _impressionSuccesses = MutableLiveData(0)
+    val impressionSuccesses: LiveData<Int> = _impressionSuccesses
+
     private val config = context.resources
         .openRawResource(R.raw.contentpass_configuration)
 
@@ -48,6 +53,20 @@ class ExampleViewModel(context: Context) : ViewModel() {
         val state = contentPass.authenticateSuspending(fromActivity)
 
         onNewContentPassState(state)
+    }
+
+    suspend fun countImpression(fromActivity: ComponentActivity) {
+        _impressionTries.postValue(_impressionTries.value?.plus(1) ?: 1)
+
+        try {
+            contentPass.countImpressionSuspending(fromActivity)
+            _impressionSuccesses.postValue(_impressionSuccesses.value?.plus(1) ?: 1)
+        } catch (impressionException: ContentPass.CountImpressionException) {
+            println("Counting impression error code: ${impressionException.message}")
+        } catch (ex: Throwable) {
+            println("Counting impression exception:")
+            ex.printStackTrace()
+        }
     }
 
     fun logout() {

@@ -14,7 +14,7 @@
 Our SDK is available on Maven Central.
 
 ```groovy
-implementation 'de.contentpass:contentpass-android:1.0.1'
+implementation 'de.contentpass:contentpass-android:1.1.0'
 ```
 
 Add this to your app's `build.gradle` file's `dependencies` element.
@@ -147,6 +147,45 @@ Any registered `Observer` will be called with the final authentication and subsc
 * This token data is encrypted and the keys are stored securely in the hardware backed (if available) KeyStore.
 * We refresh these tokens automatically in the background before they're invalidated.
 * The subscription information gets validated as well on every token refresh.
+
+### Counting an impression
+
+To count an impression, call either the suspending function `countImpressionSuspending(context: Context)` or the compatibility function `countImpression(context: Context, callback: CountImpressionCallback)`.
+
+In both cases you'll need to supply a `Context` (i.e. an `Activity` or `Fragment`) so the login process can be started again in case the user needs to login again.
+
+For an impression to be able to be counted, a user has to be authenticated and have an active subscription applicable to your scope.
+
+```kotlin
+try {
+  contentPass.countImpressionSuspending(context)
+  // handle success
+} catch (impressionException: ContentPass.CountImpressionException) {
+  // impressionException.message contains the http error code as a string
+  // if this is "404", this most likely means that the user has no applicable subscription
+} catch (ex: Throwable) {
+  // Handle the exception. 
+  // This might be network related but could also happen because the ContentPass object wasn't initialized properly.
+}
+```
+
+or for compatibility reasons:
+
+```kotlin
+contentPass.countImpression(context, object : ContentPass.CountImpressionCallback {
+  override fun onSuccess() {
+    // handle success
+  }
+
+  override fun onFailure(exception: Throwable) {
+    // handle the exception. 
+    // If this is a ContentPass.CountImpressionException, parse its message for the http error code.
+    // if this is "404", this most likely means that the user has no applicable subscription
+  }
+})
+```
+
+
 
 ### Logging out a user
 
