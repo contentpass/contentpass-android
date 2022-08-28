@@ -57,6 +57,7 @@ class ExampleViewModel(context: Context) : ViewModel() {
 
     suspend fun countImpression(fromActivity: ComponentActivity) {
         _impressionTries.postValue(_impressionTries.value?.plus(1) ?: 1)
+
         try {
             contentPass.countImpressionSuspending(fromActivity)
             _impressionSuccesses.postValue(_impressionSuccesses.value?.plus(1) ?: 1)

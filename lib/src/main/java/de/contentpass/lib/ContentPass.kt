@@ -59,7 +59,7 @@ class ContentPass internal constructor(
         fun onFailure(exception: Throwable)
     }
 
-    class CountImpressionException(statusCode: Int) : Throwable("HTTP Error code: $statusCode")
+    class CountImpressionException(statusCode: Int) : Throwable("$statusCode")
 
     interface CountImpressionCallback {
         fun onSuccess()
