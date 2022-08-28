@@ -26,6 +26,8 @@ import kotlinx.coroutines.launch
 fun MainView(viewModel: ExampleViewModel) {
     val isAuthenticated: Boolean by viewModel.isAuthenticated.observeAsState(false)
     val hasValidSubscription: Boolean by viewModel.hasValidSubscription.observeAsState(false)
+    val impressionTries: Int by viewModel.impressionTries.observeAsState(0)
+    val impressionSuccesses: Int by viewModel.impressionSuccesses.observeAsState(0)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -34,7 +36,6 @@ fun MainView(viewModel: ExampleViewModel) {
             .fillMaxSize()
     ) {
         Text(text = "Is authenticated: $isAuthenticated")
-
         Text(text = "Has valid subscription: $hasValidSubscription")
 
         PaddingValues(Dp(8.0F))
@@ -47,6 +48,12 @@ fun MainView(viewModel: ExampleViewModel) {
                 modifier = Modifier.padding(Dp(16F))
             ) { Text("Logout") }
         }
+
+        PaddingValues(Dp(8.0F))
+
+        Text(text = "Count impression tries: $impressionTries")
+        Text(text = "Count impression successes: $impressionSuccesses")
+        ImpressionButton(viewModel)
     }
 }
 
@@ -66,6 +73,16 @@ fun LoginButton(viewModel: ExampleViewModel) {
             Dp(16F)
         )
     ) { Text("Login") }
+}
+
+@Composable
+fun ImpressionButton(viewModel: ExampleViewModel) {
+    val coroutineScope = rememberCoroutineScope()
+    val activity = LocalContext.current as ComponentActivity
+
+    return Button(
+        onClick = { coroutineScope.launch { viewModel.countImpression(activity) } }
+    ) { Text("Count impression") }
 }
 
 @Preview(
