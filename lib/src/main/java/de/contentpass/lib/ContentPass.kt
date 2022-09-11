@@ -340,7 +340,31 @@ class ContentPass internal constructor(
 
     fun provideDashboardView(context: Context): ContentPassDashboardView {
         val composeView = ComposeView(context)
-        val webView = WebView(composeView.context)
+        val webView = configureWebView(composeView.context)
+
+        composeView.setContent {
+            ContentPassDashboard(webView)
+        }
+
+        CoroutineScope(coroutineContext).async {
+            try {
+                val token = authorizer.grabOneTimeToken(authState, context)
+                val url = "${configuration.apiUrl}/auth/login?route=transfer&ott=$token"
+                withContext(Dispatchers.Main) {
+                    webView.loadUrl(url)
+                }
+            } catch (exception: Throwable) {
+                withContext(Dispatchers.Main) {
+                    webView.loadUrl(configuration.oidcUrl.toString())
+                }
+            }
+        }
+
+        return composeView
+    }
+
+    private fun configureWebView(context: Context): WebView {
+        val webView = WebView(context)
         webView.settings.javaScriptEnabled = true
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean {
@@ -350,13 +374,8 @@ class ContentPass internal constructor(
                 return false
             }
         }
-        webView.loadUrl(configuration.baseUrl.toString())
-        composeView.setContent {
-            ContentPassDashboard(webView)
-        }
-        return composeView
+        return webView
     }
-
 
     private suspend fun onNewAuthState(authState: AuthState): State {
         tokenStore.storeAuthState(authState)

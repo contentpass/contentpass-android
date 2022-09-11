@@ -28,6 +28,8 @@ internal interface Authorizing {
     fun onAuthorizationRequestResult(intent: Intent?)
 
     suspend fun countImpression(authState: AuthState, activity: Context)
+
+    suspend fun grabOneTimeToken(authState: AuthState, activity: Context): String
 }
 
 internal class Authorizer(
@@ -151,6 +153,12 @@ internal class Authorizer(
         }
     }
 
+    override suspend fun grabOneTimeToken(authState: AuthState, activity: Context): String {
+        val path = "auth/login/ott?propertyId=$propertyId"
+        val response = fireApiRequestWithFreshTokens(path, authState, activity)
+        return parseOneTimeToken(response)
+    }
+
     private suspend fun fireApiRequestWithFreshTokens(
         path: String,
         authState: AuthState,
@@ -268,5 +276,12 @@ internal class Authorizer(
         val adapter = moshi.adapter(ContentPassTokenResponse::class.java)
         val contentPassTokenResponse = adapter.fromJson(string)
         return contentPassTokenResponse!!.getToken()
+    }
+
+    private fun parseOneTimeToken(response: Response): String {
+        val responseString = response.body!!.string()
+        val adapter = moshi.adapter(OneTimeTokenResponse::class.java)
+        val oneTimeTokenResponse = adapter.fromJson(responseString)
+        return oneTimeTokenResponse!!.oneTimeToken
     }
 }
