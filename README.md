@@ -7,20 +7,6 @@
 
 > contentpass supports Android 5.0 (Lollipop, sdk api version 21) and above
 
-
-
-## Installation
-
-Our SDK is available on Maven Central.
-
-```groovy
-implementation 'de.contentpass:contentpass-android:2.0.0'
-```
-
-Add this to your app's `build.gradle` file's `dependencies` element.
-
-
-
 ## Configuration
 
 You will be provided a `contentpass_configuration.json`. You will need this later to instantiate the contentpass object.
