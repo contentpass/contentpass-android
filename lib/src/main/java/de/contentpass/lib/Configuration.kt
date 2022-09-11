@@ -10,8 +10,10 @@ import com.squareup.moshi.ToJson
 internal data class Configuration(
     @Json(name = "schema_version")
     val schemaVersion: Int,
-    @Json(name = "base_url")
-    val baseUrl: Uri,
+    @Json(name = "api_url")
+    val apiUrl: Uri,
+    @Json(name = "oidc_url")
+    val oidcUrl: Uri,
     @Json(name = "redirect_uri")
     val redirectUri: Uri,
     @Json(name = "property_id")
