@@ -7,7 +7,7 @@ val composeVersion = rootProject.extra.get("composeVersion") as String?
 val lifecycleVersion = "2.3.1"
 
 android {
-    compileSdk = 31
+    compileSdk = 33
 
     defaultConfig {
         applicationId = "de.contentpass.app"
@@ -64,6 +64,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.3.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion")
+    implementation("androidx.navigation:navigation-compose:2.5.1")
     kapt("androidx.lifecycle:lifecycle-compiler:$lifecycleVersion")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.3")

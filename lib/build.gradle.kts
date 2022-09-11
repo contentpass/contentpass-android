@@ -4,6 +4,8 @@ plugins {
     kotlin("kapt")
 }
 
+val composeVersion = rootProject.extra.get("composeVersion") as String?
+
 android {
     compileSdk = 30
 
@@ -23,6 +25,12 @@ android {
         debug {
             manifestPlaceholders["appAuthRedirectScheme"] = "client.app.replaces"
         }
+    }
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = composeVersion
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -44,6 +52,8 @@ dependencies {
     implementation("com.squareup.moshi:moshi-kotlin:1.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2")
+    implementation("androidx.compose.ui:ui:$composeVersion")
+    implementation("androidx.compose.material:material:$composeVersion")
     kapt("com.squareup.moshi:moshi-kotlin-codegen:1.12.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.12.0")

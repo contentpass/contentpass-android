@@ -7,20 +7,6 @@
 
 > contentpass supports Android 5.0 (Lollipop, sdk api version 21) and above
 
-
-
-## Installation
-
-Our SDK is available on Maven Central.
-
-```groovy
-implementation 'de.contentpass:contentpass-android:2.0.0'
-```
-
-Add this to your app's `build.gradle` file's `dependencies` element.
-
-
-
 ## Configuration
 
 You will be provided a `contentpass_configuration.json`. You will need this later to instantiate the contentpass object.
@@ -192,13 +178,23 @@ contentPass.countImpression(context, object : ContentPass.CountImpressionCallbac
 
 Since we persist the user's session, you need a way to log the user out. Simply call `logout` and we remove all stored token data.
 
-```swift
+```kotlin
 contentPass.logout()
 ```
 
 The user will of course have to log in again afterwards.
 You can also call `authenticate` again and all previous user information will get overwritten. 
 We only store *one* user session at any one time.
+
+### Dashboard
+
+If you need to display the user's dashboard where they can configure their subscription plans, you can do so by displaying the `ContentPassDashboardView`. The ContentPass object offers the function:
+
+```kotlin
+contentPass.provideDashboardView(context)
+```
+
+This `ContentPassDashboardView` is a `View` that you can present as a the content of an activity, fragment or in any other way you want.
 
 ## License
 
