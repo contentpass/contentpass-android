@@ -20,7 +20,7 @@ class ContentPassTests {
     fun `initialization without stored state results in Unauthenticated`() {
         val store = MockedTokenStore()
         assertNull(store.retrieveAuthState())
-        val contentPass = ContentPass(mockk(relaxed = true), store)
+        val contentPass = ContentPass(mockk(relaxed = true), store, mockk(relaxed = true))
 
         assertEquals(ContentPass.State.Unauthenticated, contentPass.state)
     }
@@ -32,7 +32,7 @@ class ContentPassTests {
         val store = MockedTokenStore()
         store.storeAuthState(state)
 
-        val contentPass = ContentPass(mockk(relaxed = true), store)
+        val contentPass = ContentPass(mockk(relaxed = true), store, mockk(relaxed = true))
 
         Thread.sleep(10)
 
@@ -50,7 +50,7 @@ class ContentPassTests {
             coEvery { authorizer.validateSubscription(any()) }.returns(true)
             coEvery { authorizer.authenticate(any(), any()) }.returns(state)
 
-            val contentPass = ContentPass(authorizer, mockk(relaxed = true))
+            val contentPass = ContentPass(authorizer, mockk(relaxed = true), mockk(relaxed = true))
             val activity: ComponentActivity = mockk(relaxed = true)
             contentPass.registerActivityResultLauncher(activity)
 
@@ -63,7 +63,7 @@ class ContentPassTests {
     @Test
     fun `calling authenticate before registerActivityResultLauncher results in NullPointerException`() =
         runBlocking {
-            val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true))
+            val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true))
 
             try {
                 contentPass.authenticateSuspending(mockk())
@@ -77,7 +77,7 @@ class ContentPassTests {
 
     @Test
     fun `registerActivityResultLauncher for activity registers for activity result`() {
-        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true))
+        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true))
         val activity: ComponentActivity = mockk(relaxed = true)
 
         contentPass.registerActivityResultLauncher(activity)
@@ -92,7 +92,7 @@ class ContentPassTests {
 
     @Test
     fun `registerActivityResultLauncher for fragment registers for activity result`() {
-        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true))
+        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true))
         val fragment: Fragment = mockk(relaxed = true)
 
         contentPass.registerActivityResultLauncher(fragment)
@@ -113,7 +113,7 @@ class ContentPassTests {
         val authorizer: Authorizing = mockk()
         coEvery { authorizer.validateSubscription(any()) }.returns(true)
         coEvery { authorizer.authenticate(any(), any()) }.returns(authState)
-        val contentPass = ContentPass(authorizer, mockk(relaxed = true))
+        val contentPass = ContentPass(authorizer, mockk(relaxed = true), mockk(relaxed = true))
 
         contentPass.registerActivityResultLauncher(mockk<Fragment>(relaxed = true))
         contentPass.authenticateSuspending(mockk())
@@ -128,7 +128,7 @@ class ContentPassTests {
     fun `logout removes stored auth state information`() {
         val store = MockedTokenStore()
         store.storeAuthState(mockk())
-        val contentPass = ContentPass(mockk(relaxed = true), store)
+        val contentPass = ContentPass(mockk(relaxed = true), store, mockk(relaxed = true))
 
         assertNotNull(store.retrieveAuthState())
 
@@ -139,7 +139,7 @@ class ContentPassTests {
 
     @Test
     fun `registerObserver adds an observer that gets called on state changes`() {
-        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true))
+        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true))
 
         var stateResult: ContentPass.State = ContentPass.State.Initializing
 
@@ -156,7 +156,7 @@ class ContentPassTests {
 
     @Test
     fun `unregisterObserver removes an observer`() {
-        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true))
+        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true))
 
         var stateResult: ContentPass.State = ContentPass.State.Initializing
         val observer = object : ContentPass.Observer {
