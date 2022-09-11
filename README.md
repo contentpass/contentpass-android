@@ -35,7 +35,7 @@ An example `contentpass_configuration.json`:
   "schema_version": 2,
   "api_url": "https://api.example.com",
   "oidc_url": "https://pur.example.com",
-  "redirect_uri": "com.example.demo://oauth",
+  "redirect_uri": "com.example.app://oauth",
   "property_id": "YOUR_PROPERTY_ID"
 }
 ```
