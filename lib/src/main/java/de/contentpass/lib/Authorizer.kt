@@ -7,7 +7,6 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.*
 import net.openid.appauth.*
-import net.openid.appauth.AuthState.AuthStateAction
 import okhttp3.*
 import okio.IOException
 import java.util.*
@@ -35,7 +34,8 @@ internal class Authorizer(
     configuration: Configuration,
     private val context: Context,
 ) : Authorizing {
-    private val baseUrl = configuration.baseUrl
+    private val apiUrl = configuration.apiUrl
+    private val oidcUrl = configuration.oidcUrl
     private val redirectUri = configuration.redirectUri
     private val propertyId = configuration.propertyId
 
@@ -65,7 +65,7 @@ internal class Authorizer(
 
     private suspend fun doFetchConfig(): AuthorizationServiceConfiguration =
         suspendCoroutine { cont ->
-            AuthorizationServiceConfiguration.fetchFromIssuer(baseUrl) { config, ex ->
+            AuthorizationServiceConfiguration.fetchFromIssuer(oidcUrl) { config, ex ->
                 if (ex != null) {
                     cont.resumeWith(Result.failure(ex))
                 } else {
@@ -142,7 +142,7 @@ internal class Authorizer(
         val impressionId = UUID.randomUUID()
         val path = "pass/hit?pid=$propertyId&iid=$impressionId&t=pageview"
 
-        val response = fireRequestWithFreshTokens(path, authState, activity)
+        val response = fireApiRequestWithFreshTokens(path, authState, activity)
 
         if (response.code == 200) {
             return
@@ -151,7 +151,7 @@ internal class Authorizer(
         }
     }
 
-    private suspend fun fireRequestWithFreshTokens(
+    private suspend fun fireApiRequestWithFreshTokens(
         path: String,
         authState: AuthState,
         context: Context,
@@ -170,7 +170,7 @@ internal class Authorizer(
 
                     accessToken?.let { strongToken ->
                         val authorizedRequest = Request.Builder()
-                            .url("$baseUrl/$path")
+                            .url("$apiUrl/$path")
                             .header("Authorization", "Bearer $strongToken")
                             .build()
 
