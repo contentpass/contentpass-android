@@ -338,6 +338,9 @@ class ContentPass internal constructor(
         }
     }
 
+    /**
+     * Provides a View that automatically loads the user's dashboard if your contentpass scope allows this.
+     */
     fun provideDashboardView(context: Context): ContentPassDashboardView {
         val composeView = ComposeView(context)
         val webView = configureWebView(composeView.context)
