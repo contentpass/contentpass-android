@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import de.contentpass.lib.ContentPass
+import de.contentpass.lib.ContentPassDashboardView
 
 class ExampleViewModel(context: Context) : ViewModel() {
     private val _isAuthenticated = MutableLiveData(false)
@@ -25,6 +26,10 @@ class ExampleViewModel(context: Context) : ViewModel() {
         .context(context)
         .configurationFile(config)
         .build()
+
+    fun openDashboard(context: Context): ContentPassDashboardView {
+        return contentPass.provideDashboardView(context)
+    }
 
     fun onActivityCreate(activity: ComponentActivity) {
         contentPass.registerActivityResultLauncher(activity)

@@ -2,10 +2,15 @@ package de.contentpass.lib
 
 import android.content.Context
 import android.content.Intent
+import android.util.AndroidException
 import android.util.Log
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.Fragment
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -40,6 +45,7 @@ import java.util.TimerTask
 class ContentPass internal constructor(
     private val authorizer: Authorizing,
     private val tokenStore: TokenStoring,
+    private val configuration: Configuration
 ) {
     /**
      * A collection of functions that allow you to react to changes in the [ContentPass] object.
@@ -93,7 +99,7 @@ class ContentPass internal constructor(
             configuration = grabConfiguration()
             val authorizer = Authorizer(configuration!!, context!!)
             val store = TokenStore(context!!, KeyStore(context!!))
-            return ContentPass(authorizer, store)
+            return ContentPass(authorizer, store, configuration!!)
         }
 
         private fun grabConfiguration(): Configuration? {
@@ -331,6 +337,26 @@ class ContentPass internal constructor(
             authorizer.countImpression(authState, context)
         }
     }
+
+    fun provideDashboardView(context: Context): ContentPassDashboardView {
+        val composeView = ComposeView(context)
+        val webView = WebView(composeView.context)
+        webView.settings.javaScriptEnabled = true
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean {
+                url?.let {
+                    webView.loadUrl(it)
+                }
+                return false
+            }
+        }
+        webView.loadUrl(configuration.baseUrl.toString())
+        composeView.setContent {
+            ContentPassDashboard(webView)
+        }
+        return composeView
+    }
+
 
     private suspend fun onNewAuthState(authState: AuthState): State {
         tokenStore.storeAuthState(authState)
