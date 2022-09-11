@@ -58,7 +58,7 @@ kapt {
 extra.apply{
     set("PUBLISH_GROUP_ID", "de.contentpass")
     set("PUBLISH_ARTIFACT_ID", "contentpass-android")
-    set("PUBLISH_VERSION", "1.1.0")
+    set("PUBLISH_VERSION", "2.0.0")
 }
 
 apply("${rootProject.projectDir}/scripts/publish-module.gradle")

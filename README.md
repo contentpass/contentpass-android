@@ -14,7 +14,7 @@
 Our SDK is available on Maven Central.
 
 ```groovy
-implementation 'de.contentpass:contentpass-android:1.1.0'
+implementation 'de.contentpass:contentpass-android:2.0.0'
 ```
 
 Add this to your app's `build.gradle` file's `dependencies` element.
@@ -32,10 +32,11 @@ An example `contentpass_configuration.json`:
 
 ```json
 {
-  "schema_version": 1,
-  "base_url": "https://example.com",
-  "redirect_uri": "com.example.app://oauth",
-  "property_id": "df717ca-8acd-4328-a79b-3bb94ab221a0"
+  "schema_version": 2,
+  "api_url": "https://api.example.com",
+  "oidc_url": "https://pur.example.com",
+  "redirect_uri": "com.example.demo://oauth",
+  "property_id": "YOUR_PROPERTY_ID"
 }
 ```
 
