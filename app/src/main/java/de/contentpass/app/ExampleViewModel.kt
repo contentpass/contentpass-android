@@ -11,6 +11,8 @@ import de.contentpass.lib.ContentPassDashboardView
 class ExampleViewModel(context: Context) : ViewModel() {
     private val _isAuthenticated = MutableLiveData(false)
     val isAuthenticated: LiveData<Boolean> = _isAuthenticated
+    private val _email = MutableLiveData<String?>(null)
+    val email: LiveData<String?> = _email
     private val _hasValidSubscription = MutableLiveData(false)
     val hasValidSubscription: LiveData<Boolean> = _hasValidSubscription
 
@@ -44,10 +46,12 @@ class ExampleViewModel(context: Context) : ViewModel() {
         when (state) {
             is ContentPass.State.Unauthenticated -> {
                 _isAuthenticated.postValue(false)
+                _email.postValue(null)
                 _hasValidSubscription.postValue(false)
             }
             is ContentPass.State.Authenticated -> {
                 _isAuthenticated.postValue(true)
+                _email.postValue(state.email)
                 _hasValidSubscription.postValue(state.hasValidSubscription)
             }
             ContentPass.State.Initializing -> Unit

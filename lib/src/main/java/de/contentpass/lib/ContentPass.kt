@@ -3,6 +3,7 @@ package de.contentpass.lib
 import android.content.Context
 import android.content.Intent
 import android.util.AndroidException
+import android.util.Base64
 import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -139,8 +140,9 @@ class ContentPass internal constructor(
          *
          * Since an authenticated user might not have an active subscription,
          * you should always check the [hasValidSubscription] property.
+         * The user's email address is exposed here as well if your contentpass property allows that.
          */
-        class Authenticated(val hasValidSubscription: Boolean) : State()
+        class Authenticated(val email: String?, val hasValidSubscription: Boolean) : State()
     }
 
     /**
@@ -386,8 +388,11 @@ class ContentPass internal constructor(
         state = if (authState.isAuthorized) {
             setupRefreshTimer(authState)?.let {
                 if (it) {
-                    val hasSubscription = authorizer.validateSubscription(authState.idToken!!)
-                    State.Authenticated(hasSubscription)
+                    authState.idToken?.let { idToken ->
+                        val hasSubscription = authorizer.validateSubscription(idToken)
+                        val email = extractEmailFromToken(idToken)
+                        State.Authenticated(email, hasSubscription)
+                    } ?: State.Unauthenticated
                 } else {
                     state
                 }
@@ -457,6 +462,22 @@ class ContentPass internal constructor(
             Log.e(null, message)
             state = State.Unauthenticated
             tokenStore.deleteAuthState()
+        }
+    }
+
+    private fun extractEmailFromToken(idToken: String): String? {
+        val segments = idToken.split(".")
+
+        val moshi = Moshi.Builder()
+            .addLast(KotlinJsonAdapterFactory())
+            .build()
+
+        return if (segments.size < 2) {
+            null
+        } else {
+            val tokenString = String(Base64.decode(segments[1], Base64.DEFAULT))
+            val adapter = moshi.adapter(IdToken::class.java)
+            adapter.fromJson(tokenString)?.email
         }
     }
 }
