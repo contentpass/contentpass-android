@@ -18,17 +18,7 @@ jobs:
         with:
          distribution: adopt
          java-version: 11
-
-        # Builds the release artifacts of the library
-      - name: Release build
-        run: ./gradlew lib:assembleRelease
-
-        # Generates other artifacts (javadocJar is optional)
-      - name: Source jar and dokka
-        run: ./gradlew androidSourcesJar javadocJar
-
-        # Runs upload, and then closes & releases the repository
-      - name: Publish to MavenCentral
+      - name: Publish to Repsy
         run: ./gradlew publish
         env:
           REPSY_USERNAME: ${{ secrets.REPSY_USERNAME }}

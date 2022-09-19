@@ -36,6 +36,15 @@ version = PUBLISH_VERSION
 
 afterEvaluate {
     publishing {
+        repositories {
+            maven {
+                url repsyUrl
+                credentials {
+                    username repsyUsername
+                    password repsyPassword
+                }
+            }
+        }
         publications {
             release(MavenPublication) {
                 groupId PUBLISH_GROUP_ID

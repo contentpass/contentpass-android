@@ -24,15 +24,3 @@ if (secretPropsFile.exists()) {
     ext["signing.password"] = System.getenv('SIGNING_PASSWORD')
     ext["signing.key"] = System.getenv('SIGNING_KEY')
 }
-
-publishing {
-    repositories {
-        maven {
-            url repsyUrl
-            credentials {
-                username repsyUsername
-                password repsyPassword
-            }
-        }
-    }
-}
