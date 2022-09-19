@@ -7,6 +7,30 @@
 
 > contentpass supports Android 5.0 (Lollipop, sdk api version 21) and above
 
+
+
+## Installation
+
+The SDK is available on a private maven repository. Add this to your `repositories` configuration:
+
+```gro
+maven {
+    url 'https://repsy.io/mvn/0x7f/contentpass-android-tol'
+    credentials {
+        username YOUR_REPSY_USERNAME
+        password YOUR_REPSY_PASSWORD
+    }
+}
+```
+
+Then add this to your app's `build.gradle` file's `dependencies` element.
+
+```groovy
+implementation 'de.contentpass:contentpass-android-tol:2.1.0'
+```
+
+
+
 ## Configuration
 
 You will be provided a `contentpass_configuration.json`. You will need this later to instantiate the contentpass object.

@@ -67,7 +67,7 @@ kapt {
 
 extra.apply{
     set("PUBLISH_GROUP_ID", "de.contentpass")
-    set("PUBLISH_ARTIFACT_ID", "contentpass-android")
+    set("PUBLISH_ARTIFACT_ID", "contentpass-android-tol")
     set("PUBLISH_VERSION", "2.1.0")
 }
 
