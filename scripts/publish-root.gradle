@@ -1,10 +1,12 @@
+apply plugin: 'maven-publish'
+
 // Create variables with empty default values
 ext["signing.keyId"] = ''
 ext["signing.password"] = ''
 ext["signing.key"] = ''
-ext["ossrhUsername"] = ''
-ext["ossrhPassword"] = ''
-ext["sonatypeStagingProfileId"] = ''
+ext["repsyUsername"] = ''
+ext["repsyPassword"] = ''
+ext["repsyUrl"] = ''
 
 File secretPropsFile = project.rootProject.file('local.properties')
 
@@ -15,24 +17,22 @@ if (secretPropsFile.exists()) {
     p.each { name, value -> ext[name] = value }
 } else {
     // Use system environment variables
-    ext["ossrhUsername"] = System.getenv('OSSRH_USERNAME')
-    ext["ossrhPassword"] = System.getenv('OSSRH_PASSWORD')
-    ext["sonatypeStagingProfileId"] = System.getenv('SONATYPE_STAGING_PROFILE_ID')
+    ext["repsyUsername"] = System.getenv('REPSY_USERNAME')
+    ext["repsyPassword"] = System.getenv('REPSY_PASSWORD')
+    ext["repsyUrl"] = System.getenv('REPSY_URL')
     ext["signing.keyId"] = System.getenv('SIGNING_KEY_ID')
     ext["signing.password"] = System.getenv('SIGNING_PASSWORD')
     ext["signing.key"] = System.getenv('SIGNING_KEY')
 }
 
-// Set up Sonatype repository
-nexusPublishing {
+publishing {
     repositories {
-        sonatype {
-            stagingProfileId = sonatypeStagingProfileId
-            username = ossrhUsername
-            password = ossrhPassword
-
-            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+        maven {
+            url repsyUrl
+            credentials {
+                username repsyUsername
+                password repsyPassword
+            }
         }
     }
 }

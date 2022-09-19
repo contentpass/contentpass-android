@@ -54,11 +54,11 @@ afterEvaluate {
                 pom {
                     name = PUBLISH_ARTIFACT_ID
                     description = 'contentpass Android sdk'
-                    url = 'https://github.com/contentpass/contentpass-android'
+                    url = 'https://github.com/contentpass/contentpass-android-tol'
                     licenses {
                         license {
                             name = 'MIT'
-                            url = 'https://github.com/contentpass/contentpass-android/blob/main/LICENSE'
+                            url = 'https://github.com/contentpass/contentpass-android-tol/blob/main/LICENSE'
                         }
                     }
                     developers {
@@ -70,9 +70,9 @@ afterEvaluate {
                     }
 
                     scm {
-                        connection = 'scm:git:github.com/contentpass/contentpass-android.git'
-                        developerConnection = 'scm:git:ssh://github.com/contentpass/contentpass-android.git'
-                        url = 'https://github.com/contentpass/contentpass-android'
+                        connection = 'scm:git:github.com/contentpass/contentpass-android-tol.git'
+                        developerConnection = 'scm:git:ssh://github.com/contentpass/contentpass-android-tol.git'
+                        url = 'https://github.com/contentpass/contentpass-android-tol'
                     }
                 }
             }
