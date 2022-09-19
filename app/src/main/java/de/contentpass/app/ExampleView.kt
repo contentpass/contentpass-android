@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ExampleView(viewModel: ExampleViewModel, navController: NavController) {
     val isAuthenticated: Boolean by viewModel.isAuthenticated.observeAsState(false)
+    val email: String? by viewModel.email.observeAsState()
     val hasValidSubscription: Boolean by viewModel.hasValidSubscription.observeAsState(false)
     val impressionTries: Int by viewModel.impressionTries.observeAsState(0)
     val impressionSuccesses: Int by viewModel.impressionSuccesses.observeAsState(0)
@@ -34,6 +35,7 @@ fun ExampleView(viewModel: ExampleViewModel, navController: NavController) {
             .fillMaxSize()
     ) {
         Text(text = "Is authenticated: $isAuthenticated")
+        Text(text = "With email: $email")
         Text(text = "Has valid subscription: $hasValidSubscription")
 
         PaddingValues(Dp(8.0F))
