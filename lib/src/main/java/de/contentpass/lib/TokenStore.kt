@@ -19,8 +19,12 @@ internal class TokenStore(context: Context, private val keyStore: KeyStore) : To
     override fun retrieveAuthState(): AuthState? {
         return sharedPreferences.getString(tokenKey, null)?.let { token ->
             return retrieveIV()?.let { iv ->
-                val decrypted = decrypt(token.decoded(), iv)
-                AuthState.jsonDeserialize(decrypted.encoded())
+                try {
+                    val decrypted = decrypt(token.decoded(), iv)
+                    AuthState.jsonDeserialize(decrypted.encoded())
+                } catch (e: Throwable) {
+                    null
+                }
             }
         }
     }
