@@ -26,7 +26,7 @@ maven {
 Then add this to your app's `build.gradle` file's `dependencies` element.
 
 ```groovy
-implementation 'de.contentpass:contentpass-android-tol:2.2.2'
+implementation 'de.contentpass:contentpass-android-tol:2.3.0'
 ```
 
 
@@ -158,6 +158,18 @@ Any registered `Observer` will be called with the final authentication and subsc
 * This token data is encrypted and the keys are stored securely in the hardware backed (if available) KeyStore.
 * We refresh these tokens automatically in the background before they're invalidated.
 * The subscription information gets validated as well on every token refresh.
+
+### Recovering from network errors
+
+Sometimes we encounter an error state while refreshing the tokens in the background due to bad or no internet connection.
+
+You will notice this because the `state` switched to `Error`. This state object contains a reference to the original exception that was thrown. 
+
+Since we don't monitor the device's connection state you need to tell the SDK that the network connection has been reestablished / improved. We will then refresh and revalidate the user's authentication tokens.
+
+```swift
+contentPass.recoverFromError()
+```
 
 ### Counting an impression
 

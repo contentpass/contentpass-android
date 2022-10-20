@@ -27,6 +27,7 @@ fun ExampleView(viewModel: ExampleViewModel, navController: NavController) {
     val hasValidSubscription: Boolean by viewModel.hasValidSubscription.observeAsState(false)
     val impressionTries: Int by viewModel.impressionTries.observeAsState(0)
     val impressionSuccesses: Int by viewModel.impressionSuccesses.observeAsState(0)
+    val showRecoverButton: Boolean by viewModel.showRecoverButton.observeAsState(false)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -34,6 +35,13 @@ fun ExampleView(viewModel: ExampleViewModel, navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
     ) {
+        if (showRecoverButton) {
+            Button(
+                onClick = { viewModel.recoverFromError() },
+                modifier = Modifier.padding(Dp(16F))
+            ) { Text("Recover from Error") }
+        }
+
         Text(text = "Is authenticated: $isAuthenticated")
         Text(text = "With email: $email")
         Text(text = "Has valid subscription: $hasValidSubscription")

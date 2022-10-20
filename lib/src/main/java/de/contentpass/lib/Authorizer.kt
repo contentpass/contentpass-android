@@ -2,6 +2,7 @@ package de.contentpass.lib
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -53,7 +54,11 @@ internal class Authorizer(
     init {
         val context = Dispatchers.Default + Job()
         CoroutineScope(context).launch {
-            fetchConfig()
+            try {
+                fetchConfig()
+            } catch (e: Throwable) {
+                // this is allowed to fail
+            }
         }
     }
 
@@ -71,7 +76,7 @@ internal class Authorizer(
                 if (ex != null) {
                     cont.resumeWith(Result.failure(ex))
                 } else {
-                    config?.let { it ->
+                    config?.let {
                         configuration = it
                         cont.resumeWith(Result.success(it))
                     }
