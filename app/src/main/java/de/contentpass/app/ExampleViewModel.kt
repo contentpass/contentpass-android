@@ -21,6 +21,9 @@ class ExampleViewModel(context: Context) : ViewModel() {
     private val _impressionSuccesses = MutableLiveData(0)
     val impressionSuccesses: LiveData<Int> = _impressionSuccesses
 
+    private val _showRecoverButton = MutableLiveData(false)
+    val showRecoverButton: LiveData<Boolean> = _showRecoverButton
+
     private val config = context.resources
         .openRawResource(R.raw.contentpass_configuration)
 
@@ -44,18 +47,26 @@ class ExampleViewModel(context: Context) : ViewModel() {
 
     private fun onNewContentPassState(state: ContentPass.State) {
         when (state) {
-            is ContentPass.State.Unauthenticated -> {
+            ContentPass.State.Unauthenticated -> {
                 _isAuthenticated.postValue(false)
                 _email.postValue(null)
                 _hasValidSubscription.postValue(false)
+                _showRecoverButton.postValue(false)
             }
             is ContentPass.State.Authenticated -> {
                 _isAuthenticated.postValue(true)
                 _email.postValue(state.email)
                 _hasValidSubscription.postValue(state.hasValidSubscription)
+                _showRecoverButton.postValue(false)
+
             }
-            ContentPass.State.Initializing -> Unit
+            is ContentPass.State.Error -> _showRecoverButton.postValue(true)
+            ContentPass.State.Initializing -> _showRecoverButton.postValue(false)
         }
+    }
+
+    fun recoverFromError() {
+        contentPass.recoverFromError()
     }
 
     suspend fun login(fromActivity: ComponentActivity) {
