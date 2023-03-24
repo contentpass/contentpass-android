@@ -2,7 +2,7 @@ package de.contentpass.lib
 
 import android.content.Context
 import android.content.Intent
-import android.util.AndroidException
+import android.net.Uri
 import android.util.Base64
 import android.util.Log
 import android.webkit.WebView
@@ -11,18 +11,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.Fragment
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.*
 import net.openid.appauth.AuthState
 import net.openid.appauth.AuthorizationException
-import okhttp3.Request
 import java.io.InputStream
-import java.lang.NullPointerException
-import java.util.Timer
-import java.util.TimerTask
+import java.util.*
 
 /**
  * An object that handles all communication with the contentpass servers for you.
@@ -400,6 +396,12 @@ class ContentPass internal constructor(
         webView.settings.javaScriptEnabled = true
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean {
+                if(url != null && url.contains(".pdf")) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    context.startActivity(intent);
+                    return true;
+                }
+
                 url?.let {
                     webView.loadUrl(it)
                 }
