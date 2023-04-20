@@ -26,7 +26,7 @@ maven {
 Then add this to your app's `build.gradle` file's `dependencies` element.
 
 ```groovy
-implementation 'de.contentpass:contentpass-android-tol:2.3.0'
+implementation 'de.contentpass:contentpass-android-tol:2.4.0'
 ```
 
 
