@@ -12,11 +12,30 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.*
 import net.openid.appauth.AuthState
 import net.openid.appauth.AuthorizationException
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Request
+import okhttp3.Response
 import java.io.InputStream
+import java.io.IOException
 import java.lang.NullPointerException
 import java.util.Timer
 import java.util.TimerTask
+import java.util.UUID
+import kotlin.coroutines.suspendCoroutine
+
+const val SAMPLING_RATE = 0.05
+
+data class SampleImpressionData(
+    val ea: String,
+    val ec: String,
+    val cpabid: String,
+    val cppid: String,
+    val cpsr: Double
+)
 
 /**
  * An object that handles all communication with the contentpass servers for you.
@@ -40,6 +59,7 @@ import java.util.TimerTask
 class ContentPass internal constructor(
     private val authorizer: Authorizing,
     private val tokenStore: TokenStoring,
+    private val configuration: Configuration
 ) {
     /**
      * A collection of functions that allow you to react to changes in the [ContentPass] object.
@@ -93,7 +113,7 @@ class ContentPass internal constructor(
             configuration = grabConfiguration()
             val authorizer = Authorizer(configuration!!, context!!)
             val store = TokenStore(context!!, KeyStore(context!!))
-            return ContentPass(authorizer, store)
+            return ContentPass(authorizer, store, configuration!!)
         }
 
         private fun grabConfiguration(): Configuration? {
@@ -293,12 +313,8 @@ class ContentPass internal constructor(
      * This is the compatibility function for Java users and developers who are not yet
      * comfortable or able to use kotlin coroutines.
      *
-     * A user has to be authenticated and have an active subscription applicable to your
-     * scope for this to work.
      * This function calls the callback's onSuccess on a successful impression counting.
      * In case of an error the callback's onFailure contains an exception containing more information.
-     * If the exception is a ContentPass.CountImpressionException and the message states the http error
-     * code 404, the user most likely has no applicable subscription.
      *
      * @param context the context the authentication flow can be restarted from in case a login is necessary.
      * @param callback an object implementing the [CountImpressionCallback] interface that enables
@@ -318,17 +334,68 @@ class ContentPass internal constructor(
     /**
      * Count an impression by calling this function.
      *
-     * A user has to be authenticated and have an active subscription applicable to your
-     * scope for this to work.
      * This function simply returns on success or will throw an exception containing more information.
-     * If the exception is a ContentPass.CountImpressionException and the message states the http error
-     * code 404, the user most likely has no applicable subscription.
      *
      * @param context the context the authentication flow can be restarted from in case a login is necessary.
      */
     suspend fun countImpressionSuspending(context: Context) {
         return withContext(coroutineContext) {
-            authorizer.countImpression(authState, context)
+            if (state is State.Authenticated && (state as State.Authenticated).hasValidSubscription) {
+                authorizer.countPaidImpression(authState, context)
+            }
+
+
+            countSampledImpression()
+        }
+    }
+
+    private suspend fun countSampledImpression() {
+        val generatedSample = Math.random()
+        if (generatedSample >= SAMPLING_RATE) {
+            return
+        }
+
+        val instanceId = UUID.randomUUID().toString()
+        val publicId = configuration.propertyId.substring(0, 8)
+        val sampleImpressionData = SampleImpressionData(
+            ea = "load",
+            ec = "tcf-sampled",
+            cpabid = instanceId,
+            cppid = publicId,
+            cpsr = SAMPLING_RATE
+        )
+        val moshi = Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
+        val jsonAdapter = moshi.adapter(SampleImpressionData::class.java)
+        val jsonBody = jsonAdapter.toJson(sampleImpressionData)
+
+        val responseCode = postRequest("${configuration.apiUrl}/stats", jsonBody);
+        if (responseCode < 200 || responseCode >= 300) {
+            throw CountImpressionException(responseCode)
+        }
+    }
+
+
+    private suspend fun postRequest(url: String, jsonBody: String): Int {
+        val client = OkHttpClient()
+        val requestBody = jsonBody.toRequestBody("application/json; charset=UTF-8".toMediaType())
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .header("Content-Type", "application/json; charset=UTF-8")
+            .build()
+
+        return suspendCoroutine { continuation ->
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    continuation.resumeWith(Result.failure(e))
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    continuation.resumeWith(Result.success(response.code))
+                }
+            })
         }
     }
 

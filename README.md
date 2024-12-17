@@ -150,12 +150,15 @@ Any registered `Observer` will be called with the final authentication and subsc
 * The subscription information gets validated as well on every token refresh.
 
 ### Counting an impression
+To count an impression, call either the suspending function `countImpressionSuspending(context: Context)` or
+the compatibility function `countImpression(context: Context, callback: CountImpressionCallback)`.
+In both cases you'll need to supply a `Context` (i.e. an `Activity` or `Fragment`) so the login process can
+be started again in case the user needs to login again.
 
-To count an impression, call either the suspending function `countImpressionSuspending(context: Context)` or the compatibility function `countImpression(context: Context, callback: CountImpressionCallback)`.
-
-In both cases you'll need to supply a `Context` (i.e. an `Activity` or `Fragment`) so the login process can be started again in case the user needs to login again.
-
-For an impression to be able to be counted, a user has to be authenticated and have an active subscription applicable to your scope.
+These methods count impressions for billing purposes. This method must be invoked whenever a user views a piece
+of content, independently of authentication state. If the current user is authenticated the impression will automatically
+be logged as paid ad-free impression to calculate the publisher compensation. As the total amount of impressions is required
+for billing as well, this method also counts sampled impressions of non-subscribers.
 
 ```kotlin
 try {

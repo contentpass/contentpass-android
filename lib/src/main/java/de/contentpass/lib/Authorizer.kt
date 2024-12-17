@@ -27,7 +27,7 @@ internal interface Authorizing {
 
     fun onAuthorizationRequestResult(intent: Intent?)
 
-    suspend fun countImpression(authState: AuthState, activity: Context)
+    suspend fun countPaidImpression(authState: AuthState, activity: Context)
 }
 
 internal class Authorizer(
@@ -138,9 +138,10 @@ internal class Authorizer(
         }
     }
 
-    override suspend fun countImpression(authState: AuthState, activity: Context) {
+    override suspend fun countPaidImpression(authState: AuthState, activity: Context) {
         val impressionId = UUID.randomUUID()
-        val path = "pass/hit?pid=$propertyId&iid=$impressionId&t=pageview"
+        val publicId = propertyId.substring(0, 8)
+        val path = "pass/hit?pid=$publicId&iid=$impressionId&t=pageview"
 
         val response = fireApiRequestWithFreshTokens(path, authState, activity)
 
