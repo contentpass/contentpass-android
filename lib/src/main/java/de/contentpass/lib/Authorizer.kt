@@ -200,7 +200,8 @@ internal class Authorizer(
             .setPrompt("consent")
             .setAdditionalParameters(
                 mutableMapOf(
-                    Pair("cp_route", "login")
+                    Pair("cp_route", "login"),
+                    Pair("cp_property", propertyId)
                 )
             ).build()
     }
