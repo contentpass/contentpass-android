@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "de.contentpass.app"
-        minSdk = 21
+        minSdk = 25
         targetSdk = 30
         versionCode = 1
         versionName = "1.0"

@@ -5,7 +5,7 @@
 ## Compatibility
 
 
-> contentpass supports Android 5.0 (Lollipop, sdk api version 21) and above
+> contentpass supports Android 7.1 (sdk api version 25) and above
 
 
 
