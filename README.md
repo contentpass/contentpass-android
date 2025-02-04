@@ -149,6 +149,19 @@ Any registered `Observer` will be called with the final authentication and subsc
 * We refresh these tokens automatically in the background before they're invalidated.
 * The subscription information gets validated as well on every token refresh.
 
+### Recovering from network errors
+
+Sometimes we encounter an error state while refreshing the tokens in the background due to bad or no internet connection.
+
+You will notice this because the `state` switched to `Error`. This state object contains a reference to the original exception that was thrown.
+
+Since we don't monitor the device's connection state you need to tell the SDK that the network connection has been reestablished / improved. We will then refresh and revalidate the user's authentication tokens.
+
+```kotlin
+contentPass.recoverFromError()
+```
+
+
 ### Counting an impression
 To count an impression, call either the suspending function `countImpressionSuspending(context: Context)` or
 the compatibility function `countImpression(context: Context, callback: CountImpressionCallback)`.
