@@ -136,12 +136,22 @@ class ContentPass internal constructor(
      */
     sealed class State {
         /**
-         * The contentpass object was just created. Will switch to another state very soon.
+         * The contentpass object was just created or an error recovery is ongoing.
+         * Will switch to another state very soon.
          *
          * After the stored contentpass token information is validated and refreshed, this will
-         * switch to either [Unauthenticated] or [Authenticated]
+         * switch to one of [Error], [Unauthenticated] or [Authenticated]
          */
         object Initializing : State()
+
+        /**
+         * An error was encountered during token validation.
+         *
+         * This is probably due to a failing internet connection. You can check the exception and
+         * act accordingly. Once a stable network connection has been established, call [recoverFromError]
+         * to retry the token validation.
+         */
+        class Error(val exception: Throwable): State()
 
         /**
          * No user is currently authenticated.
@@ -177,12 +187,15 @@ class ContentPass internal constructor(
 
     private val observers = mutableListOf<Observer>()
 
-    private val coroutineContext = Dispatchers.Default + Job()
+    private val coroutineContext = Dispatchers.Default + SupervisorJob()
 
     init {
+        initializeAuthState()
+    }
+
+    private fun initializeAuthState() {
         tokenStore.retrieveAuthState()?.let {
             authState = it
-
             CoroutineScope(coroutineContext).launch {
                 onNewAuthState(authState)
             }
@@ -348,6 +361,19 @@ class ContentPass internal constructor(
             countSampledImpression()
         }
     }
+    /**
+     * Reinitializes this object's state.
+     *
+     * Call this function when you encountered an error during token validation, the current [state]
+     * is set to [Error] and you want to try the validation again. Commonly used when network access
+     * has been reestablished.
+     */
+    fun recoverFromError() {
+        state = State.Initializing
+
+        initializeAuthState()
+    }
+
 
     private suspend fun countSampledImpression() {
         val generatedSample = Math.random()
@@ -405,8 +431,14 @@ class ContentPass internal constructor(
         state = if (authState.isAuthorized) {
             setupRefreshTimer(authState)?.let {
                 if (it) {
-                    val hasSubscription = authorizer.validateSubscription(authState.idToken!!)
-                    State.Authenticated(hasSubscription)
+                    authState.idToken?.let { idToken ->
+                        try {
+                            val hasSubscription = authorizer.validateSubscription(idToken)
+                            State.Authenticated(hasSubscription)
+                        } catch (e: Throwable) {
+                            State.Error(e)
+                        }
+                    } ?: State.Unauthenticated
                 } else {
                     state
                 }

@@ -51,7 +51,11 @@ internal class Authorizer(
     init {
         val context = Dispatchers.Default + Job()
         CoroutineScope(context).launch {
-            fetchConfig()
+            try {
+                fetchConfig()
+            } catch (e: Throwable) {
+                // this is allowed to fail
+            }
         }
     }
 
