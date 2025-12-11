@@ -18,9 +18,9 @@ import javax.crypto.spec.SecretKeySpec
 import javax.security.auth.x500.X500Principal
 import java.security.KeyStore as VendorKeyStore
 
-internal class KeyStore(private val context: Context) {
+internal class KeyStore(private val context: Context, private val propertyId: String) {
     private val keystoreName = "AndroidKeyStore"
-    private val keyPairAlias = "de.contentpass.KeyPair"
+    private val keyPairAlias = "de.contentpass.KeyPair.$propertyId"
     private val privateKey: PrivateKey
     private val publicKey: PublicKey
     private val keystore = VendorKeyStore.getInstance(keystoreName)
