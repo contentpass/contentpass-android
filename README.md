@@ -14,7 +14,7 @@
 Our SDK is available on Maven Central.
 
 ```groovy
-implementation 'de.contentpass:contentpass-android:2.2.3'
+implementation 'de.contentpass:contentpass-android:2.2.4'
 ```
 
 Add this to your app's `build.gradle` file's `dependencies` element.
