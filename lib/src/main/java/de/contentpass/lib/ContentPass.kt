@@ -112,7 +112,7 @@ class ContentPass internal constructor(
         fun build(): ContentPass {
             configuration = grabConfiguration()
             val authorizer = Authorizer(configuration!!, context!!)
-            val store = TokenStore(context!!, KeyStore(context!!))
+            val store = TokenStore(context!!, KeyStore(context!!, configuration!!.propertyId))
             return ContentPass(authorizer, store, configuration!!)
         }
 
