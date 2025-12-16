@@ -1,21 +1,19 @@
 package de.contentpass.lib
 
 import android.content.Context
-import android.security.KeyPairGeneratorSpec
-import java.math.BigInteger
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.spec.MGF1ParameterSpec
-import java.util.Calendar
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.OAEPParameterSpec
 import javax.crypto.spec.PSource
 import javax.crypto.spec.SecretKeySpec
-import javax.security.auth.x500.X500Principal
 import java.security.KeyStore as VendorKeyStore
 
 internal class KeyStore(private val context: Context, private val propertyId: String) {
@@ -58,38 +56,50 @@ internal class KeyStore(private val context: Context, private val propertyId: St
     }
 
     private fun createKeyPair(): KeyPair {
-        val spec = buildKeyPairGeneratorSpec()
-        val generator = KeyPairGenerator.getInstance("RSA", "AndroidKeyStore")
-        generator.initialize(spec)
+        val spec = buildKeyGenParameterSpec()
+        val generator = KeyPairGenerator.getInstance(
+            KeyProperties.KEY_ALGORITHM_RSA,
+            "AndroidKeyStore"
+        )
+        generator.initialize(spec as java.security.spec.AlgorithmParameterSpec)
 
         return generator.generateKeyPair()
     }
 
-    private fun buildKeyPairGeneratorSpec(): KeyPairGeneratorSpec {
-        val start = Calendar.getInstance()
-        val end = Calendar.getInstance()
-        end.add(Calendar.YEAR, 1)
-
-        return KeyPairGeneratorSpec.Builder(context)
-            .setAlias(keyPairAlias)
-            .setSubject(X500Principal("CN=Sample Name, O=Android Authority"))
-            .setSerialNumber(BigInteger.ONE)
-            .setStartDate(start.time)
-            .setEndDate(end.time)
+    private fun buildKeyGenParameterSpec(): KeyGenParameterSpec {
+        return KeyGenParameterSpec.Builder(
+            keyPairAlias,
+            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+        )
+            .setKeySize(2048)
+            .setDigests(KeyProperties.DIGEST_SHA256)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP)
             .build()
     }
 
     private fun retrieveKey(): SecretKey? {
-        return sharedPreferences.getString(sharedPreferencesKey, null)?.let {
-            val encrypted = it.decoded()
-            return decryptKey(encrypted)
+        return sharedPreferences.getString(sharedPreferencesKey, null)?.let { encryptedString ->
+            try {
+                val encrypted = encryptedString.decoded()
+                decryptKey(encrypted)
+            } catch (e: Exception) {
+                // If decryption fails, the stored key might be corrupted
+                // Return null to trigger key regeneration
+                null
+            }
         }
     }
 
     private fun decryptKey(encryptedKey: ByteArray): SecretKey {
-        cipher.init(Cipher.DECRYPT_MODE, privateKey, paddingSpec)
-        val decrypted = cipher.doFinal(encryptedKey)
-        return SecretKeySpec(decrypted, "AES")
+        try {
+            cipher.init(Cipher.DECRYPT_MODE, privateKey, paddingSpec)
+            val decrypted = cipher.doFinal(encryptedKey)
+            return SecretKeySpec(decrypted, "AES")
+        } catch (e: javax.crypto.IllegalBlockSizeException) {
+            // If decryption fails due to block size issues, try to regenerate the key
+            // by deleting the corrupted entry and creating a new one
+            throw IllegalStateException("Failed to decrypt stored key. Key may be corrupted.", e)
+        }
     }
 
     private fun createKey(): SecretKey {
@@ -110,8 +120,12 @@ internal class KeyStore(private val context: Context, private val propertyId: St
     }
 
     private fun encryptKey(key: SecretKey): ByteArray {
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey, paddingSpec)
-        return cipher.doFinal(key.encoded)
+        try {
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey, paddingSpec)
+            return cipher.doFinal(key.encoded)
+        } catch (e: javax.crypto.IllegalBlockSizeException) {
+            throw IllegalStateException("Failed to encrypt key. Key size may be incompatible.", e)
+        }
     }
 }
 
