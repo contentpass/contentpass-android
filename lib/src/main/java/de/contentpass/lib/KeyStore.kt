@@ -50,7 +50,16 @@ internal class KeyStore(private val context: Context, private val propertyId: St
         if (!keystore.containsAlias(keyPairAlias)) {
             createKeyPair()
         }
-        val pair = keystore.getEntry(keyPairAlias, null) as VendorKeyStore.PrivateKeyEntry
+        val pair = try {
+            keystore.getEntry(keyPairAlias, null) as? VendorKeyStore.PrivateKeyEntry
+        } catch (e: Exception) {
+            null
+        } ?: run {
+            // Android 8 can throw when the entry is invalidated/corrupted; recreate it.
+            keystore.deleteEntry(keyPairAlias)
+            createKeyPair()
+            keystore.getEntry(keyPairAlias, null) as VendorKeyStore.PrivateKeyEntry
+        }
         privateKey = pair.privateKey
         publicKey = pair.certificate.publicKey
     }
