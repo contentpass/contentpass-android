@@ -50,18 +50,27 @@ internal class KeyStore(private val context: Context, private val propertyId: St
         if (!keystore.containsAlias(keyPairAlias)) {
             createKeyPair()
         }
-        val pair = try {
-            keystore.getEntry(keyPairAlias, null) as? VendorKeyStore.PrivateKeyEntry
+        val recovered = try {
+            val key = keystore.getKey(keyPairAlias, null) as? PrivateKey
+            val cert = keystore.getCertificate(keyPairAlias)
+            if (key != null && cert != null) {
+                key to cert.publicKey
+            } else {
+                null
+            }
         } catch (e: Exception) {
             null
         } ?: run {
             // Android 8 can throw when the entry is invalidated/corrupted; recreate it.
             keystore.deleteEntry(keyPairAlias)
             createKeyPair()
-            keystore.getEntry(keyPairAlias, null) as VendorKeyStore.PrivateKeyEntry
+            val key = keystore.getKey(keyPairAlias, null) as PrivateKey
+            val cert = keystore.getCertificate(keyPairAlias)
+                ?: throw IllegalStateException("Failed to load keystore certificate after regeneration.")
+            key to cert.publicKey
         }
-        privateKey = pair.privateKey
-        publicKey = pair.certificate.publicKey
+        privateKey = recovered.first
+        publicKey = recovered.second
     }
 
     private fun createKeyPair(): KeyPair {
