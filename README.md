@@ -54,6 +54,27 @@ If that's not to your liking, please refer to this [documentation](https://githu
 
 We provide an example application in the `/app` app module. If you're unclear about the usage of some of our features, have a look and tinker around with the code. Refer to the example's [README](https://github.com/contentpass/contentpass-android/blob/main/app/README.md) for more information.
 
+## End-to-end tests
+
+The example app includes Maestro flows under `e2e/maestro`. Maestro is used as an external CLI tool and does not need to be added as a Gradle dependency.
+
+To run the flows locally, install Maestro first:
+
+```bash
+curl -Ls "https://get.maestro.mobile.dev" | bash
+```
+
+Then start an Android emulator and run:
+
+```bash
+scripts/run-maestro-e2e.sh
+```
+
+TODO: Consider sharding Maestro flows in CI if the E2E suite grows enough for parallel execution to be worth the extra emulator startup time.
+
+See `e2e/maestro/README.md` for the current flows and local requirements.
+
+
 ### The contentpass_configuration.json
 
 We recommend to put this somewhere in your `res` folder, e.g. `res/raw/` or `res/json`.
