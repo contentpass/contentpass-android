@@ -16,7 +16,7 @@ import javax.crypto.spec.PSource
 import javax.crypto.spec.SecretKeySpec
 import java.security.KeyStore as VendorKeyStore
 
-internal class KeyStore(private val context: Context, private val propertyId: String) {
+internal class KeyStore(private val context: Context, private val propertyId: String) : SecretKeyProviding {
     private val keystoreName = "AndroidKeyStore"
     private val keyPairAlias = "de.contentpass.KeyPair.$propertyId"
     private val privateKey: PrivateKey
@@ -36,7 +36,7 @@ internal class KeyStore(private val context: Context, private val propertyId: St
     }
     private val sharedPreferencesKey = "AES_KEY"
 
-    val key by lazy {
+    override val key: SecretKey by lazy {
         retrieveKey()?.let {
             return@lazy it
         } ?: run {

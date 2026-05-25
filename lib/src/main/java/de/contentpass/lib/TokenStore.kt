@@ -4,13 +4,18 @@ import android.content.Context
 import net.openid.appauth.AuthState
 import java.security.SecureRandom
 import javax.crypto.Cipher
+import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-internal class TokenStore(context: Context, private val keyStore: KeyStore) : TokenStoring {
+internal interface SecretKeyProviding {
+    val key: SecretKey
+}
+
+internal class TokenStore(context: Context, private val keyProvider: SecretKeyProviding) : TokenStoring {
     private val tokenKey = "de.contentpass.AuthState"
     private val ivKey = "de.contentpass.IV"
     private val cipher = Cipher.getInstance("AES/GCM/NOPADDING")
-    private val key by lazy { keyStore.key }
+    private val key by lazy { keyProvider.key }
 
     private val sharedPreferences by lazy {
         context.getSharedPreferences("de.contentpass", Context.MODE_PRIVATE)

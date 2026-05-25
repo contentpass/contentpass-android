@@ -18,15 +18,11 @@ class TokenStoreTests {
 
     private val captureSlot = slot<String>()
 
-    private val keyStore: KeyStore = mockk(relaxed = true)
-    private val store = TokenStore(context, keyStore)
+    private val store = TokenStore(context, object : SecretKeyProviding {
+        override val key = createSecretKey()
+    })
 
     init {
-        val generator = KeyGenerator.getInstance("AES")
-        generator.init(256)
-        val secretKey = generator.generateKey()
-        every { keyStore.key }.returns(secretKey)
-
         val sharedPrefs: SharedPreferences = mockk()
         every { sharedPrefs.getString(tokenKey, any()) }.answers { map[tokenKey] }
         every { sharedPrefs.getString(ivKey, any()) }.answers { map[ivKey] }
@@ -78,6 +74,37 @@ class TokenStoreTests {
     }
 
     @Test
+    fun `retrieveAuthState returns null when token is missing`() {
+        assertNull(store.retrieveAuthState())
+    }
+
+    @Test
+    fun `retrieveAuthState returns null when iv is missing`() {
+        map[tokenKey] = "stored-token"
+
+        assertNull(store.retrieveAuthState())
+    }
+
+    @Test
+    fun `retrieveAuthState returns null when stored token cannot be decrypted`() {
+        map[tokenKey] = "stored-token"
+        map[ivKey] = String(ByteArray(12), Charsets.ISO_8859_1)
+
+        assertNull(store.retrieveAuthState())
+    }
+
+    @Test
+    fun `storeAuthState writes encrypted token and iv`() {
+        val authState: AuthState = mockk()
+        every { authState.jsonSerializeString() }.returns("here be dragons")
+
+        store.storeAuthState(authState)
+
+        assertTrue(map.containsKey(tokenKey))
+        assertTrue(map.containsKey(ivKey))
+    }
+
+    @Test
     fun `deleting an auth state works`() {
         val authState: AuthState = mockk()
         every { authState.jsonSerializeString() }.returns("here be dragons")
@@ -89,5 +116,23 @@ class TokenStoreTests {
 
         store.deleteAuthState()
         assertNull(store.retrieveAuthState())
+    }
+
+    @Test
+    fun `deleteAuthState removes token and keeps iv`() {
+        val authState: AuthState = mockk()
+        every { authState.jsonSerializeString() }.returns("here be dragons")
+
+        store.storeAuthState(authState)
+        store.deleteAuthState()
+
+        assertFalse(map.containsKey(tokenKey))
+        assertTrue(map.containsKey(ivKey))
+    }
+
+    private fun createSecretKey(): javax.crypto.SecretKey {
+        val generator = KeyGenerator.getInstance("AES")
+        generator.init(256)
+        return generator.generateKey()
     }
 }
