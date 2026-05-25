@@ -44,7 +44,4 @@ jobs:
         profile: pixel_2
         disable-animations: true
         script: |
-          ./gradlew :app:installDebug
-          maestro test e2e/maestro/initial-unauthenticated-state.yaml
-          maestro test e2e/maestro/count-impression.yaml
-          maestro test e2e/maestro/logout-keeps-user-unauthenticated.yaml
+          scripts/run-maestro-e2e.sh
