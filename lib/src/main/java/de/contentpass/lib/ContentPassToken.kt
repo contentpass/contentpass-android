@@ -31,13 +31,18 @@ internal data class ContentPassToken(private val tokenString: String) {
             .addLast(KotlinJsonAdapterFactory())
             .build()
 
-        val headerString = String(Base64.decode(split[0], Base64.DEFAULT))
+        val headerString = decodeJwtSegment(split[0])
         val headerAdapter = moshi.adapter(Header::class.java)
         header = headerAdapter.fromJson(headerString)!!
 
-        val bodyString = String(Base64.decode(split[1], Base64.DEFAULT))
+        val bodyString = decodeJwtSegment(split[1])
         val bodyAdapter = moshi.adapter(Body::class.java)
         body = bodyAdapter.fromJson(bodyString)!!
+    }
+
+    private fun decodeJwtSegment(segment: String): String {
+        val flags = Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
+        return String(Base64.decode(segment, flags))
     }
 }
 

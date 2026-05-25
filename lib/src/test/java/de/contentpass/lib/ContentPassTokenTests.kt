@@ -4,6 +4,10 @@ import android.util.Base64
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.verify
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 
@@ -21,9 +25,9 @@ class ContentPassTokenTests {
 
         val stringSlot = slot<String>()
         every {
-            Base64.decode(capture(stringSlot), Base64.DEFAULT)
+            Base64.decode(capture(stringSlot), any())
         } answers {
-            java.util.Base64.getDecoder().decode(stringSlot.captured)
+            java.util.Base64.getUrlDecoder().decode(stringSlot.captured)
         }
     }
 
@@ -31,20 +35,120 @@ class ContentPassTokenTests {
     fun `isSubscriptionValid returns true when authorized and plans are set`() {
         val contentPassToken = ContentPassToken(validToken)
 
-        assert(contentPassToken.isSubscriptionValid)
+        assertTrue(contentPassToken.isSubscriptionValid)
+    }
+
+    @Test
+    fun `isSubscriptionValid returns true when authorized and multiple plans are set`() {
+        val token = tokenWithBody(
+            """
+            {
+              "auth": true,
+              "plans": ["first-plan", "second-plan"],
+              "aud": "69b28985",
+              "iat": 1628766292,
+              "exp": 1628942692
+            }
+            """.trimIndent()
+        )
+
+        val contentPassToken = ContentPassToken(token)
+
+        assertTrue(contentPassToken.isSubscriptionValid)
+    }
+
+    @Test
+    fun `token segments are decoded as Base64URL without padding`() {
+        val token = tokenWithBody(
+            """
+            {
+              "auth": true,
+              "plans": ["first-plan"],
+              "aud": "69b28985",
+              "iat": 1628766292,
+              "exp": 1628942692
+            }
+            """.trimIndent()
+        )
+
+        ContentPassToken(token)
+
+        verify(exactly = 2) {
+            Base64.decode(any<String>(), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+        }
     }
 
     @Test
     fun `isSubscriptionValid returns false when unauthorized`() {
         val contentPassToken = ContentPassToken(noAuthToken)
 
-        assert(!contentPassToken.isSubscriptionValid)
+        assertFalse(contentPassToken.isSubscriptionValid)
     }
 
     @Test
     fun `isSubscriptionValid returns false when plans are missing`() {
         val contentPassToken = ContentPassToken(missingPlansToken)
 
-        assert(!contentPassToken.isSubscriptionValid)
+        assertFalse(contentPassToken.isSubscriptionValid)
     }
+
+    @Test
+    fun `invalid token format throws`() {
+        try {
+            ContentPassToken("invalid-token")
+            fail("Expected malformed token to throw")
+        } catch (throwable: Throwable) {
+            assertTrue(throwable is IndexOutOfBoundsException || throwable is IllegalArgumentException)
+        }
+    }
+
+    @Test
+    fun `missing auth field throws`() {
+        val token = tokenWithBody(
+            """
+            {
+              "plans": ["first-plan"],
+              "aud": "69b28985",
+              "iat": 1628766292,
+              "exp": 1628942692
+            }
+            """.trimIndent()
+        )
+
+        try {
+            ContentPassToken(token)
+            fail("Expected token without auth field to throw")
+        } catch (throwable: Throwable) {
+            assertTrue(throwable.message?.contains("auth") == true)
+        }
+    }
+
+    @Test
+    fun `missing plans field throws`() {
+        val token = tokenWithBody(
+            """
+            {
+              "auth": true,
+              "aud": "69b28985",
+              "iat": 1628766292,
+              "exp": 1628942692
+            }
+            """.trimIndent()
+        )
+
+        try {
+            ContentPassToken(token)
+            fail("Expected token without plans field to throw")
+        } catch (throwable: Throwable) {
+            assertTrue(throwable.message?.contains("plans") == true)
+        }
+    }
+
+    private fun tokenWithBody(body: String): String {
+        val header = """{"alg":"RS256"}""".encoded()
+        return "$header.${body.encoded()}"
+    }
+
+    private fun String.encoded(): String =
+        java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(toByteArray())
 }

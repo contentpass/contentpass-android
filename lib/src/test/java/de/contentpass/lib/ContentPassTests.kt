@@ -17,6 +17,8 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import java.lang.NullPointerException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class ContentPassTests {
     private lateinit var mockUri: Uri
@@ -67,6 +69,65 @@ class ContentPassTests {
     }
 
     @Test
+    fun `initialization with authorized state and valid subscription results in Authenticated`() {
+        val state: AuthState = mockk()
+        every { state.isAuthorized }.returns(true)
+        every { state.idToken }.returns("id-token")
+        every { state.accessTokenExpirationTime }.returns(System.currentTimeMillis() + 5000)
+        val store = MockedTokenStore()
+        store.storeAuthState(state)
+        val authorizer: Authorizing = mockk()
+        coEvery { authorizer.validateSubscription("id-token") }.returns(true)
+
+        val contentPass = ContentPass(authorizer, store, exampleConfiguration)
+
+        waitUntil { contentPass.state is ContentPass.State.Authenticated }
+
+        assertTrue(contentPass.state is ContentPass.State.Authenticated)
+        assertTrue((contentPass.state as ContentPass.State.Authenticated).hasValidSubscription)
+        cancelRefreshTimer(contentPass)
+    }
+
+    @Test
+    fun `initialization with authorized state and invalid subscription results in Authenticated without subscription`() {
+        val state: AuthState = mockk()
+        every { state.isAuthorized }.returns(true)
+        every { state.idToken }.returns("id-token")
+        every { state.accessTokenExpirationTime }.returns(System.currentTimeMillis() + 5000)
+        val store = MockedTokenStore()
+        store.storeAuthState(state)
+        val authorizer: Authorizing = mockk()
+        coEvery { authorizer.validateSubscription("id-token") }.returns(false)
+
+        val contentPass = ContentPass(authorizer, store, exampleConfiguration)
+
+        waitUntil { contentPass.state is ContentPass.State.Authenticated }
+
+        assertTrue(contentPass.state is ContentPass.State.Authenticated)
+        assertFalse((contentPass.state as ContentPass.State.Authenticated).hasValidSubscription)
+        cancelRefreshTimer(contentPass)
+    }
+
+    @Test
+    fun `initialization with authorized state and subscription validation failure results in Error`() {
+        val state: AuthState = mockk()
+        every { state.isAuthorized }.returns(true)
+        every { state.idToken }.returns("id-token")
+        every { state.accessTokenExpirationTime }.returns(System.currentTimeMillis() + 5000)
+        val store = MockedTokenStore()
+        store.storeAuthState(state)
+        val authorizer: Authorizing = mockk()
+        coEvery { authorizer.validateSubscription("id-token") }.throws(IllegalStateException("validation failed"))
+
+        val contentPass = ContentPass(authorizer, store, exampleConfiguration)
+
+        waitUntil { contentPass.state is ContentPass.State.Error }
+
+        assertTrue(contentPass.state is ContentPass.State.Error)
+        cancelRefreshTimer(contentPass)
+    }
+
+    @Test
     fun `authenticateSuspending sets state to authenticated on successful authentication`() =
         runBlocking {
             val state: AuthState = mockk()
@@ -83,8 +144,9 @@ class ContentPassTests {
 
             val result = contentPass.authenticateSuspending(mockk())
 
-            assert(result is ContentPass.State.Authenticated)
-            assert(contentPass.state is ContentPass.State.Authenticated)
+            assertTrue(result is ContentPass.State.Authenticated)
+            assertTrue(contentPass.state is ContentPass.State.Authenticated)
+            cancelRefreshTimer(contentPass)
         }
 
     @Test
@@ -94,13 +156,34 @@ class ContentPassTests {
 
             try {
                 contentPass.authenticateSuspending(mockk())
-                assert(false)
+                fail("Expected authentication without activityResultLauncher to throw")
             } catch (e: NullPointerException) {
-                assert(true)
+                assertTrue(true)
             } catch (e: Throwable) {
-                assert(false)
+                fail("Expected NullPointerException, got ${e::class.java.name}")
             }
         }
+
+    @Test
+    fun `authenticate callback calls onFailure when activity result launcher is missing`() {
+        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true), exampleConfiguration)
+        val latch = CountDownLatch(1)
+        var failure: Throwable? = null
+
+        contentPass.authenticate(mockk(), object : ContentPass.AuthenticationCallback {
+            override fun onSuccess(state: ContentPass.State) {
+                latch.countDown()
+            }
+
+            override fun onFailure(exception: Throwable) {
+                failure = exception
+                latch.countDown()
+            }
+        })
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+        assertTrue(failure is NullPointerException)
+    }
 
     @Test
     fun `registerActivityResultLauncher for activity registers for activity result`() {
@@ -149,6 +232,7 @@ class ContentPassTests {
         contentPass.logout()
 
         assertEquals(ContentPass.State.Unauthenticated, contentPass.state)
+        cancelRefreshTimer(contentPass)
     }
 
     @Test
@@ -182,6 +266,24 @@ class ContentPassTests {
     }
 
     @Test
+    fun `registerObserver does not add the same observer twice`() {
+        val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true), exampleConfiguration)
+        var callCount = 0
+        val observer = object : ContentPass.Observer {
+            override fun onNewState(state: ContentPass.State) {
+                callCount += 1
+            }
+        }
+
+        contentPass.registerObserver(observer)
+        contentPass.registerObserver(observer)
+
+        contentPass.logout()
+
+        assertEquals(1, callCount)
+    }
+
+    @Test
     fun `unregisterObserver removes an observer`() {
         val contentPass = ContentPass(mockk(relaxed = true), mockk(relaxed = true), exampleConfiguration)
 
@@ -198,5 +300,42 @@ class ContentPassTests {
         contentPass.logout()
 
         assertEquals(ContentPass.State.Initializing, stateResult)
+    }
+
+    @Test
+    fun `recoverFromError without stored state results in Unauthenticated`() {
+        val store = MockedTokenStore()
+        val contentPass = ContentPass(mockk(relaxed = true), store, exampleConfiguration)
+
+        contentPass.recoverFromError()
+
+        assertEquals(ContentPass.State.Unauthenticated, contentPass.state)
+    }
+
+    @Test
+    fun `recoverFromError with unauthenticated stored state results in Unauthenticated`() {
+        val state: AuthState = mockk()
+        every { state.isAuthorized }.returns(false)
+        val store = MockedTokenStore()
+        store.storeAuthState(state)
+        val contentPass = ContentPass(mockk(relaxed = true), store, exampleConfiguration)
+
+        contentPass.recoverFromError()
+        waitUntil { contentPass.state == ContentPass.State.Unauthenticated }
+
+        assertEquals(ContentPass.State.Unauthenticated, contentPass.state)
+    }
+
+    private fun waitUntil(assertion: () -> Boolean) {
+        val timeoutAt = System.currentTimeMillis() + 1000
+        while (!assertion() && System.currentTimeMillis() < timeoutAt) {
+            Thread.sleep(10)
+        }
+    }
+
+    private fun cancelRefreshTimer(contentPass: ContentPass) {
+        val field = ContentPass::class.java.getDeclaredField("refreshTimer")
+        field.isAccessible = true
+        (field.get(contentPass) as? java.util.Timer)?.cancel()
     }
 }
