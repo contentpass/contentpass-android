@@ -1,0 +1,11 @@
+appId: de.contentpass.app
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Is authenticated: false"
+- assertVisible: "Has valid subscription: false"
+- assertVisible: "Login"
+- assertVisible: "Logout"
+- assertVisible: "Count impression"
+- assertVisible: "Count impression tries: 0"
+- assertVisible: "Count impression successes: 0"

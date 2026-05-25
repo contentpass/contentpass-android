@@ -1,0 +1,11 @@
+appId: de.contentpass.app
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Is authenticated: false"
+- assertVisible: "Has valid subscription: false"
+- tapOn: "Logout"
+- extendedWaitUntil:
+    visible: "Is authenticated: false"
+    timeout: 5000
+- assertVisible: "Has valid subscription: false"

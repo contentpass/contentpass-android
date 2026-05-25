@@ -1,0 +1,14 @@
+appId: de.contentpass.app
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Is authenticated: false"
+- assertVisible: "Has valid subscription: false"
+- assertVisible: "Count impression tries: 0"
+- assertVisible: "Count impression successes: 0"
+- tapOn: "Count impression"
+- extendedWaitUntil:
+    visible: "Count impression tries: 1"
+    timeout: 5000
+- assertVisible: "Is authenticated: false"
+- assertVisible: "Has valid subscription: false"
